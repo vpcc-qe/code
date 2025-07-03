@@ -1,4 +1,4 @@
-# [WIP]: Video-based Point Cloud Compression Quality Enhancement Using Deep Learning Approach
+# Video-based Point Cloud Compression Quality Enhancement Using Deep Learning Approach
 
 
 This repository contains the official implementation for the paper: **"Video-based Point Cloud Compression Quality Enhancement Using Deep Learning Approach"**.
@@ -13,53 +13,91 @@ Before you begin, ensure you have the following installed:
 * **MinkowskiEngine Version**: 0.5.4
 
 
+
 ## 1. Initial Ground Truth Generation for BaseNet Training
 ### Datasets
-Ensure you have download the MPEG PCC 8i dataset, and place it under the `data/` directory, expected directory structure:
-```
-vpcc-qe/
-├── data/
-│   ├── 8i/
-│   │   ├── 8iVFBv2/
-│   │   │   ├── longdress
-│   │   │   ├── loot
-│   │   │   ├── redandblack
-│   │   │   ├── soldier
-```
++ Ensure you have download the MPEG PCC 8i dataset, and use [mpeg-pcc-tmc2](https://github.com/MPEGGroup/mpeg-pcc-tmc2) to generate compressed data series `r1`, `r2`, `r3` from `longdress`, `loot`, `redandblack`, and `soldier`.
 
-Next, use `mpeg-pcc-tmc2` to generate compressed data series `r1`, `r2`, `r3` from `longdress`, `loot`, `redandblack`, and `soldier`.
-
-Next, cut the compressed data into blocks by running `python cut_block.py`
-
-After cutting blocks, find `new_origin`. You need to use the kdtree method from `mpeg-pcc-dmetric-0.13.05` to generate the `block_compress` folder.
++ Run `python basenet_dataset.py`, You will get the following directory: 
+ ```diff
+ vpcc-qe/
+ ├── data_r1/
+ │   ├── train_dataset/
+ │   │   ├── block_origin/
+ │   │   ├── block_compress/
+ │   │   ├── block_new_origin/
+ │   ├── test_dataset/
+ │   │   ├── block_origin/
+ │   │   ├── block_compress/
+ ├── data_r2/
+ ├── data_r3/
+ ...
+ ```
 
 ### Train: 
  
 Run `python train.py`, which will generate `epoch_[number]_model.pth` files in the `models` folder.
 
+### Evaluate:
+Run `python evaluate.py`, We default choose `epoch_60_model.pth` to evaluate.
+
 ## 2. Dynamic Ground Truth Refinement for Enhanced BaseNet Training
 
 ### Datasets
-Same as above
-### Train:
-
-Same as above, but you need to modify `use_vpcc=True`
-
-## 3. Ground Truth Generation for Point Complementation
-
-### Datasets
-
-- Download the corresponding `block_interpolates` files for the `r1`, `r2`, `r3` series and place them in the corresponding folders
-- Select the model file from step 2, run `python gen_predict.py` to get the corresponding `block_predict` from `block_compress` through the model file
-- Run `python gen_origin.py`, pass `block_predict` and `block_origin` as parameters to get `block_new_predict_origin`
-- Run `python gen_residual.py`, pass `block_predict` and `block_new_predict_origin` as parameters to get `block_predict_residual`
-- Run `python gen_origin.py`, pass `block_predict_residual` and `block_interpolate` as parameters to get `block_new_predict_residual`
+Same as above.
 
 ### Train:
-
-- Run `python train.py`, pass `block_interpolate` and `block_new_predict_residual` as parameters for training.
+Same as above, but you need to set `use_vpcc=True` in `data.py`.
 
 ### Evaluate:
-- Run `python `
+Same as above.
+
+## 3. Ground Truth Generation for Point Complementation
+### Datasets
++ Ensure you have download the `interpolate dataset` and move it into the `train_dataset` and `test_dataset`.
+  ```
+  vpcc-qe/
+  ├── data_r1/
+  │   ├── train_dataset/
+  │   │   ├── block_origin/
+  │   │   ├── block_compress/
+  │   │   ├── block_new_origin/
+  │   │   ├── block_interpolate/
+  │   ├── test_dataset/
+  │   │   ├── block_origin/
+  │   │   ├── block_compress/
+  │   │   ├── block_interpolate/
+  ├── data_r2/
+  ├── data_r3/
+  ...
+  ```
+
++ Run `python interpolatenet_dataset.py`, You will get the following directory: 
+  ```
+  vpcc-qe/
+  ├── data_r1/
+  │   ├── train_dataset/
+  │   │   ├── block_origin/
+  │   │   ├── block_compress/
+  │   │   ├── block_new_origin/
+  │   │   ├── block_interpolate/
+  │   │   ├── block_predict/
+  │   │   ├── block_new_predict_origin/
+  │   │   ├── block_predict_residual/
+  │   │   ├── block_new_predict_residual/
+  │   ├── test_dataset/
+  │   │   ├── block_origin/
+  │   │   ├── block_compress/
+  │   │   ├── block_interpolate/
+  ├── data_r2/
+  ├── data_r3/
+  ```
+
+
+### Train:
+- Run `python train_interpolate.py`
+
+### Evaluate:
+- Run `python evaluate_interpolate.py`
 
 
