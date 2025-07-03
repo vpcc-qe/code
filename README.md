@@ -11,93 +11,71 @@ Before you begin, ensure you have the following installed:
 * **PyTorch:** 1.9.1+cu111
 * **CUDA Version used by PyTorch**: 11.1
 * **MinkowskiEngine Version**: 0.5.4
+* **Dataset**: Download the dataset from [TODO]()
 
 
 
-## 1. Initial Ground Truth Generation for BaseNet Training
-### Datasets
-+ Ensure you have download the MPEG PCC 8i dataset, and use [mpeg-pcc-tmc2](https://github.com/MPEGGroup/mpeg-pcc-tmc2) to generate compressed data series `r1`, `r2`, `r3` from `longdress`, `loot`, `redandblack`, and `soldier`.
+## Training the BaseNet
 
-+ Run `python basenet_dataset.py`, You will get the following directory: 
- ```diff
- vpcc-qe/
- ├── data_r1/
- │   ├── train_dataset/
- │   │   ├── block_origin/
- │   │   ├── block_compress/
- │   │   ├── block_new_origin/
- │   ├── test_dataset/
- │   │   ├── block_origin/
- │   │   ├── block_compress/
- ├── data_r2/
- ├── data_r3/
- ...
- ```
+```bash
+python train_basenet.py \
+    --dataset_root [path/to/your/dataset] \
+    --output_dir ./checkpoints/basenet 
+```
+- `--dataset_root`: Path to the root directory of your training dataset.
+- `--output_dir`: Directory where model checkpoints (e.g., ⁠epoch_60_model.pth) and logs will be saved.
 
-### Train: 
- 
-Run `python train.py`, which will generate `epoch_[number]_model.pth` files in the `models` folder.
+## Evaluating the BaseNet
 
-### Evaluate:
-Run `python evaluate.py`, We default choose `epoch_60_model.pth` to evaluate.
-
-## 2. Dynamic Ground Truth Refinement for Enhanced BaseNet Training
-
-### Datasets
-Same as above.
-
-### Train:
-Same as above, but you need to set `use_vpcc=True` in `data.py`.
-
-### Evaluate:
-Same as above.
-
-## 3. Ground Truth Generation for Point Complementation
-### Datasets
-+ Ensure you have download the `interpolate dataset` and move it into the `train_dataset` and `test_dataset`.
-  ```
-  vpcc-qe/
-  ├── data_r1/
-  │   ├── train_dataset/
-  │   │   ├── block_origin/
-  │   │   ├── block_compress/
-  │   │   ├── block_new_origin/
-  │   │   ├── block_interpolate/
-  │   ├── test_dataset/
-  │   │   ├── block_origin/
-  │   │   ├── block_compress/
-  │   │   ├── block_interpolate/
-  ├── data_r2/
-  ├── data_r3/
-  ...
-  ```
-
-+ Run `python interpolatenet_dataset.py`, You will get the following directory: 
-  ```
-  vpcc-qe/
-  ├── data_r1/
-  │   ├── train_dataset/
-  │   │   ├── block_origin/
-  │   │   ├── block_compress/
-  │   │   ├── block_new_origin/
-  │   │   ├── block_interpolate/
-  │   │   ├── block_predict/
-  │   │   ├── block_new_predict_origin/
-  │   │   ├── block_predict_residual/
-  │   │   ├── block_new_predict_residual/
-  │   ├── test_dataset/
-  │   │   ├── block_origin/
-  │   │   ├── block_compress/
-  │   │   ├── block_interpolate/
-  ├── data_r2/
-  ├── data_r3/
-  ```
+```bash
+python evaluate.py \
+    --model_path ./checkpoints/basenet/epoch_60_model.pth \
+    --dataset_root [path/to/your/test_dataset] \
+    --output_dir ./results/basenet_eval
+```
+- `--model_path`: Path to the specific model checkpoint you want to evaluate. 
+- `--dataset_root`: Path to the root directory of your training dataset.
+- `--output_dir`: Directory where model checkpoints (e.g., ⁠epoch_60_model.pth) and logs will be saved.
 
 
-### Train:
-- Run `python train_interpolate.py`
+## Training the Enhanced BaseNet
 
-### Evaluate:
-- Run `python evaluate_interpolate.py`
+```bash
+python train_basenet.py \
+    --dataset_root [path/to/your/dataset] \
+    --output_dir ./checkpoints/enhanced_basenet \
+    --use_dynamic
+```
+- `--use_dynamic`: Enable dynamic ground truth
+
+## Evaluating the Enhanced BaseNet
+
+```bash
+python evaluate.py \
+    --model_path ./checkpoints/enhanced_basenet/epoch_60_model.pth \
+    --dataset_root [path/to/your/test_dataset] \
+    --output_dir ./results/enhanced_basenet_eval
+```
+
+
+## Training the InterpolateNet
+
+```bash
+python train.py \
+    --dataset_root [path/to/your/dataset] \
+    --output_dir ./checkpoints/interpolatenet
+    --use_interpolate
+```
+
+## Evaluating the InterpolateNet
+```bash
+python evaluate.py \
+    --model_path ./checkpoints/basenet/epoch_60_model.pth \
+    --interpolate_model_path ./checkpoints/interpolatenet/epoch_60_model.pth \
+    --dataset_root [path/to/your/test_dataset] \
+    --output_dir ./results/interpolatenet
+```
+- `--model_path`: Path to the  BaseNet model or Enhanced BaseNet model checkpoint you want to evaluate. 
+- `--interpolate_model_path`: Path to the InterpolateNet model checkpoint you want to evaluate. 
 
 
