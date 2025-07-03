@@ -11,7 +11,7 @@ Before you begin, ensure you have the following installed:
 * **PyTorch:** 1.9.1+cu111
 * **CUDA Version used by PyTorch**: 11.1
 * **MinkowskiEngine Version**: 0.5.4
-* **Dataset**: Download the dataset from [TODO]()
+* **Dataset**: Download the dataset from [Onedrive](https://mailouhkedu-my.sharepoint.com/:u:/g/personal/s1360912_live_hkmu_edu_hk/EfXAKuDoG2hAhw8JnkeixmABKRMl6RylxNIl8oIVggwrjQ?e=zn7eaa)
 
 
 
