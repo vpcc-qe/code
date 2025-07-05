@@ -1,2 +1,5 @@
 dataset
 dataset.zip
+vpcc_cache
+logs
+__pycache__
