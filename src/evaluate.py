@@ -1,3 +1,4 @@
+import argparse
 import os
 import subprocess
 import torch
@@ -12,7 +13,7 @@ import pandas as pd
 device = 'cuda'
 device = device if torch.cuda.is_available() and device == 'cuda' else 'cpu'
 
-def predict(model1_path, model2_path, compress_dir, interpolate_dir, origin_dir, output_dir, target_index, dataset_name):
+def predict(model1_path, model2_path, compress_dir, interpolate_dir, origin_dir, output_dir, target_index, dataset_name,vpcc_path,origin_path,compress_path):
     """
     使用两个训练好的模型分别对 compress_dir 和 interpolate_dir 进行预测，合并预测点云并返回 PSNR 值
     """
@@ -57,50 +58,48 @@ def predict(model1_path, model2_path, compress_dir, interpolate_dir, origin_dir,
             predicted_coords = predict.F.cpu().numpy()
             all_predicted_coords1.append(predicted_coords)
             logger.info(f"完成块 {batch_data['filename']} 的 model1 预测")
+    
 
     # === 2. 用 model2 预测 INTERPOLATE_DIR ===
-    model2 = SimpleAustinNet()
-    checkpoint2 = torch.load(model2_path)
-    model2.load_state_dict(checkpoint2['model_state_dict'])
-    model2 = model2.to(device)
-    model2.eval()
-
-    test_dataset2 = PointCloudDataset(
-        interpolate_dir,
-        interpolate_dir,
-        interpolate_dir,
-        interpolate_dir,
-        target_index=target_index
-    )
     
-    dataloader2 = torch.utils.data.DataLoader(test_dataset2, batch_size=1, shuffle=False)
-
     all_predicted_coords2 = []
-    with torch.no_grad():
-        for batch_idx, batch_data in enumerate(dataloader2):            
-            if target_index not in batch_data['filename'][0]:
-                continue
-            interpolate_tensor = batch_data['compress_tensor'].squeeze(0).to(device)
-            interpolate_coords = ME_utils.batched_coordinates([interpolate_tensor], device=device)
-            interpolate_sparse = ME.SparseTensor(
-                features=interpolate_tensor,
-                coordinates=interpolate_coords,
-                device=device
-            )
-            predict = model2(interpolate_sparse)
-            predicted_coords = predict.F.cpu().numpy()
-            all_predicted_coords2.append(predicted_coords)
-            logger.info(f"完成块 {batch_data['filename']} 的 model2 预测")
+    if model2_path:
+        model2 = SimpleAustinNet()
+        checkpoint2 = torch.load(model2_path)
+        model2.load_state_dict(checkpoint2['model_state_dict'])
+        model2 = model2.to(device)
+        model2.eval()
+
+        test_dataset2 = PointCloudDataset(
+            interpolate_dir,
+            interpolate_dir,
+            interpolate_dir,
+            interpolate_dir,
+            target_index=target_index
+        )
+
+        dataloader2 = torch.utils.data.DataLoader(test_dataset2, batch_size=1, shuffle=False)
+
+        with torch.no_grad():
+            for batch_idx, batch_data in enumerate(dataloader2):            
+                if target_index not in batch_data['filename'][0]:
+                    continue
+                interpolate_tensor = batch_data['compress_tensor'].squeeze(0).to(device)
+                interpolate_coords = ME_utils.batched_coordinates([interpolate_tensor], device=device)
+                interpolate_sparse = ME.SparseTensor(
+                    features=interpolate_tensor,
+                    coordinates=interpolate_coords,
+                    device=device
+                )
+                predict = model2(interpolate_sparse)
+                predicted_coords = predict.F.cpu().numpy()
+                all_predicted_coords2.append(predicted_coords)
+                logger.info(f"完成块 {batch_data['filename']} 的 model2 预测")
 
 #     === 3. 合并两个模型的预测点云 ===
     merged_predicted_coords = np.concatenate(
         [np.concatenate(all_predicted_coords1, axis=0) if all_predicted_coords1 else np.zeros((0,3)),
          np.concatenate(all_predicted_coords2, axis=0) if all_predicted_coords2 else np.zeros((0,3))],
-        axis=0
-    )
-    # Only Model 2
-    merged_predicted_coords = np.concatenate(
-        [np.concatenate(all_predicted_coords1, axis=0) if all_predicted_coords2 else np.zeros((0,3))],
         axis=0
     )
     logger.info(f"合并后的预测点云形状: {merged_predicted_coords.shape}")
@@ -112,57 +111,23 @@ def predict(model1_path, model2_path, compress_dir, interpolate_dir, origin_dir,
 
     # === 5. 后续流程不变 ===
     if dataset_name == "redandblack":
-        origin_file = f"../../Data/8i_test/orig/redandblack/Ply/redandblack_vox10_{target_index}.ply"
-        compress_file = f"../../Data/8i_test/8x/redandblack/r2/S26C03R03_rec_{target_index}.ply"
+        origin_file = f"{origin_path}/redandblack/Ply/redandblack_vox10_{target_index}.ply"
+        compress_file = f"{compress_path}/redandblack/r2/S26C03R03_rec_{target_index}.ply"
     elif dataset_name == "soldier":
-        origin_file = f"../../Data/8i_test/orig/soldier/Ply/soldier_vox10_{target_index}.ply"
-        compress_file = f"../../Data/8i_test/8x/soldier/r2/S26C03R03_rec_{target_index}.ply"
+        origin_file = f"{origin_path}/soldier/Ply/soldier_vox10_{target_index}.ply"
+        compress_file = f"{compress_path}/soldier/r2/S26C03R03_rec_{target_index}.ply"
     else:
         raise ValueError("Unknown dataset_name")
 
     psnr_AtoB, psnr_BtoA = calculate_and_save_psnr(
-        origin_file, compress_file, predict_file, output_dir, epoch_num, logger, dataset_name, target_index
+        origin_file, compress_file, predict_file, output_dir, epoch_num, logger, dataset_name, target_index, vpcc_path
     )
 
     return psnr_AtoB, psnr_BtoA
 
-def calculate_baseline_psnr(output_dir, target_index, dataset_name):
-    logger.info(f"计算 baseline PSNR for {dataset_name}-{target_index}...")
-
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    if dataset_name == "redandblack":
-        origin_file = f"../../Data/8i_test/orig/redandblack/Ply/redandblack_vox10_{target_index}.ply"
-        compress_file = f"../../Data/8i_test/8x/redandblack/Ply/S26C03R03_rec_{target_index}.ply"
-    elif dataset_name == "soldier":
-        origin_file = f"../../Data/8i_test/orig/soldier/Ply/soldier_vox10_{target_index}.ply"
-        compress_file = f"../../Data/8i_test/8x/soldier/Ply/S26C03R03_rec_{target_index}.ply"
-    else:
-        raise ValueError("Unknown dataset_name")
-
+def calculate_and_save_psnr(original_file, compressed_file, result_file, output_dir, epoch_num, logger, dataset_name, target_index,vpcc_path):
     try:
-        cmd = f"../../mpeg-pcc-dmetric-0.13.05-origin/mpeg-pcc-dmetric-0.13.05/test/pc_error_d --fileA={origin_file} --fileB={compress_file} --resolution=1023 --dropdups=0"
-        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output, _ = process.communicate()
-
-        psnr_file = f"{output_dir}/psnr_baseline_{dataset_name}_{target_index}.txt"
-        with open(psnr_file, 'w') as f:
-            f.write(output.decode())
-        logger.info(f"Baseline PSNR 已保存到：{psnr_file}")
-
-        psnr_AtoB, psnr_BtoA = read_psnr_from_file(psnr_file)
-        logger.info(f"{dataset_name}-{target_index} baseline psnr A to B: {psnr_AtoB}, B to A: {psnr_BtoA}")
-
-        return psnr_AtoB, psnr_BtoA
-
-    except Exception as e:
-        logger.error(f"Error in baseline PSNR calculation for {dataset_name}-{target_index}: {str(e)}")
-        return None, None
-
-def calculate_and_save_psnr(original_file, compressed_file, result_file, output_dir, epoch_num, logger, dataset_name, target_index):
-    try:
-        cmd = f"../../mpeg-pcc-dmetric-0.13.05-origin/mpeg-pcc-dmetric-0.13.05/test/pc_error_d --fileA={original_file} --fileB={result_file} --resolution=1023 --dropdups=0"
+        cmd = f"{vpcc_path} --fileA={original_file} --fileB={result_file} --resolution=1023 --dropdups=0"
         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, _ = process.communicate()
 
@@ -181,15 +146,23 @@ def calculate_and_save_psnr(original_file, compressed_file, result_file, output_
         return None, None
 
 if __name__ == '__main__':
-    MODELS_DIR = 'models/archive'
-    COMPRESS_DIR = "/home/jupyter-haoyu/data_202505/r2/r2/test_dataset/block_compress"
-    ORIGIN_DIR = "/home/jupyter-haoyu/data_202505/r2/r2/test_dataset/block_origin"
-    INTERPOLATE_DIR = "/home/jupyter-haoyu/data_202505/r2/r2/test_dataset/block_interpolate"
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset',required=True)
+    parser.add_argument('--model',required=True)
+    parser.add_argument('--interpolate_model')
+    parser.add_argument('--vpcc',required=True)
+    parser.add_argument('--origin_path',required=True)
+    parser.add_argument('--compress_path',required=True)
+    args = parser.parse_args()
+    
+    INTERPOLATE_DIR = f"{args.dataset}/block_interpolate"
+    COMPRESS_DIR = f"{args.dataset}/block_compress"
+    ORIGIN_DIR = f"{args.dataset}/block_origin"
     OUTPUT_DIR = './output'
 
     # 用户指定 model1 和 model2 路径
-    specific_model1 = os.path.join(MODELS_DIR, 'epoch_60_model_20250524.pth')
-    specific_model2 = os.path.join(MODELS_DIR, 'epoch_60_model_20250605.pth')
+    specific_model1 = args.model
+    specific_model2 = args.interpolate_model
 
     datasets = {
         "redandblack": range(1450, 1460),
@@ -210,7 +183,10 @@ if __name__ == '__main__':
                 origin_dir=ORIGIN_DIR,
                 output_dir=OUTPUT_DIR,
                 target_index=target_index_str,
-                dataset_name=dataset_name
+                dataset_name=dataset_name,
+                vpcc_path = args.vpcc,
+                origin_path = args.origin_path,
+                compress_path = args.compress_path,
             )
             if psnr_AtoB is not None and psnr_BtoA is not None:
                 predict_results.append({

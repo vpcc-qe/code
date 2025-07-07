@@ -1,5 +1,7 @@
+block_dataset
 dataset
-dataset.zip
 vpcc_cache
 logs
 __pycache__
+models
+*.png

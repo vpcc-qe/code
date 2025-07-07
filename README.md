@@ -18,24 +18,20 @@ Before you begin, ensure you have the following installed:
 ## Training the BaseNet
 
 ```bash
-python train_basenet.py \
-    --dataset_root [path/to/your/dataset] \
-    --output_dir ./checkpoints/basenet 
+python src/train.py --dataset=YOUR_DATASET
 ```
-- `--dataset_root`: Path to the root directory of your training dataset.
-- `--output_dir`: Directory where model checkpoints (e.g., ⁠epoch_60_model.pth) and logs will be saved.
 
 ## Evaluating the BaseNet
 
 ```bash
-python evaluate.py \
-    --model_path ./checkpoints/basenet/epoch_60_model.pth \
-    --dataset_root [path/to/your/test_dataset] \
-    --output_dir ./results/basenet_eval
+python src/evaluate.py \
+--dataset=YOUR_TEST_DATASET \
+--model=YOUR_MODEL_PATH \
+--vpcc=YOUR_VPCC_TOOL_PATH \
+--origin_path=YOUR_ORIGIN_FILE_PATH \
+--compress_path=YOUR_COMPRESS_FILE_PATH
 ```
-- `--model_path`: Path to the specific model checkpoint you want to evaluate. 
-- `--dataset_root`: Path to the root directory of your training dataset.
-- `--output_dir`: Directory where model checkpoints (e.g., ⁠epoch_60_model.pth) and logs will be saved.
+
 
 
 ## Training the Enhanced BaseNet

@@ -1,3 +1,4 @@
+import argparse
 import os
 import torch
 from torch.utils.data import DataLoader, Dataset, random_split
@@ -49,7 +50,7 @@ def train_model(model, train_dataloader, optimizer, scheduler, epochs):
         
         if epoch > 0 and check_convergence(train_pred_loss_history):
             use_vpcc = True
-            logger.info(f"\n检测到损失收敛，从epoch {epoch} 开始启用VPCC模式")
+            logger.info(f"\n检测到损失收敛，从epoch {epoch} 开始启用dynamic模式")
         
         for batch_idx, batch_data in enumerate(train_dataloader):
             compress_tensor = batch_data['compress_tensor'].squeeze(0).to(device)#.reshape(-1, 3).float().to(DEVICE)
@@ -135,6 +136,8 @@ def train_model(model, train_dataloader, optimizer, scheduler, epochs):
 
                 # 保存定期检查点
             save_path = f'models/epoch_{epoch + 1}_model.pth'
+            save_dir = os.path.dirname(save_path)
+            os.makedirs(save_dir, exist_ok=True)
             torch.save({
                     'epoch': epoch + 1,
                     'model_state_dict': model.state_dict(),
@@ -144,7 +147,7 @@ def train_model(model, train_dataloader, optimizer, scheduler, epochs):
                     'train_pred_btoa_loss': avg_train_pred_btoa_loss, 
                     'train_baseline_loss': avg_train_baseline_loss,
                     'train_pred_loss_history': train_pred_loss_history,
-                     'train_pred_atob_loss_history': train_pred_atob_loss_history,  
+                    'train_pred_atob_loss_history': train_pred_atob_loss_history,  
                     'train_pred_btoa_loss_history': train_pred_btoa_loss_history, 
                     'train_baseline_loss_history': train_baseline_loss_history,
                     'val_pred_loss_history': val_pred_loss_history,
@@ -158,14 +161,17 @@ def train_model(model, train_dataloader, optimizer, scheduler, epochs):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset',required=True)
+    args = parser.parse_args()
     epochs = 100
     base_path = "/home/jupyter-haoyu/code/dataset/r1/train_dataset"
 
     train_dataset = PointCloudDataset(
-        f"{base_path}/block_interpolate",
-        f"{base_path}/block_predict_residual",
-        f"{base_path}/block_new_predict_residual",
-        f"{base_path}/block_new_predict_residual"
+        f"{args.dataset}/block_interpolate",
+        f"{args.dataset}/block_predict_residual",
+        f"{args.dataset}/block_new_predict_residual",
+        f"{args.dataset}/block_new_predict_residual"
     )
 
     # 创建数据加载器
