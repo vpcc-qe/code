@@ -261,7 +261,7 @@ def position_loss(current_file, pred, compress, origin, new_origin,new_origin_at
     # 声明使用全局变量
     global _last_cache_update_epoch
     # Step 2:
-    if False:
+    if use_vpcc:
         should_update_cache = (
             current_epoch is not None and 
             (current_epoch - _last_cache_update_epoch >= cache_update_frequency)

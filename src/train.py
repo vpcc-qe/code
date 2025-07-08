@@ -24,7 +24,7 @@ DEVICE = 'cuda:0'
 device = 'cuda'
 device = device if torch.cuda.is_available() and device == 'cuda' else 'cpu'
 
-def train_model(model, train_dataloader, optimizer, scheduler, epochs):        
+def train_model(model, train_dataloader, optimizer, scheduler, epochs,dynamic_enabled):        
     logger.info(f"当前默认CUDA设备: {torch.cuda.current_device()}")
     model = model.to(DEVICE)
     logger.info(f"模型所在设备: {next(model.parameters()).device}")
@@ -40,6 +40,12 @@ def train_model(model, train_dataloader, optimizer, scheduler, epochs):
     
     use_vpcc = False
     
+    if not dynamic_enabled:
+        logger.info("Dynamic Enhancement 未启用。")
+    else:
+        logger.info("Dynamic Enhancement启用。")
+    
+    
     for epoch in range(epochs):
         total_pred_loss = 0
         total_pred_atob_loss = 0
@@ -48,7 +54,7 @@ def train_model(model, train_dataloader, optimizer, scheduler, epochs):
         num_batches = 0
         logger.info(f"\nStart epoch {epoch}")
         
-        if epoch > 0 and check_convergence(train_pred_loss_history):
+        if dynamic_enabled and not use_vpcc and epoch > 0 and check_convergence(train_pred_loss_history):
             use_vpcc = True
             logger.info(f"\n检测到损失收敛，从epoch {epoch} 开始启用dynamic模式")
         
@@ -163,6 +169,7 @@ def train_model(model, train_dataloader, optimizer, scheduler, epochs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset',required=True)
+    parser.add_argument('--dynamic', action='store_true')
     args = parser.parse_args()
     epochs = 100
     base_path = "/home/jupyter-haoyu/code/dataset/r1/train_dataset"
@@ -196,6 +203,6 @@ if __name__ == '__main__':
 #     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     # 训练模型
-    train_model(model, train_dataloader, optimizer, scheduler, epochs)
+    train_model(model, train_dataloader, optimizer, scheduler, epochs,dynamic_enabled=args.dynamic)
     
  

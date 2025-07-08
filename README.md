@@ -36,42 +36,18 @@ python src/evaluate.py \
 
 ## Training the Enhanced BaseNet
 
+
 ```bash
-python train_basenet.py \
-    --dataset_root [path/to/your/dataset] \
-    --output_dir ./checkpoints/enhanced_basenet \
-    --use_dynamic
+python src/train.py --dataset=YOUR_DATASET --dynamic
 ```
-- `--use_dynamic`: Enable dynamic ground truth
 
 ## Evaluating the Enhanced BaseNet
 
-```bash
-python evaluate.py \
-    --model_path ./checkpoints/enhanced_basenet/epoch_60_model.pth \
-    --dataset_root [path/to/your/test_dataset] \
-    --output_dir ./results/enhanced_basenet_eval
-```
+Same as Evaluating the BaseNet.
 
 
 ## Training the InterpolateNet
 
-```bash
-python train.py \
-    --dataset_root [path/to/your/dataset] \
-    --output_dir ./checkpoints/interpolatenet
-    --use_interpolate
-```
 
 ## Evaluating the InterpolateNet
-```bash
-python evaluate.py \
-    --model_path ./checkpoints/basenet/epoch_60_model.pth \
-    --interpolate_model_path ./checkpoints/interpolatenet/epoch_60_model.pth \
-    --dataset_root [path/to/your/test_dataset] \
-    --output_dir ./results/interpolatenet
-```
-- `--model_path`: Path to the  BaseNet model or Enhanced BaseNet model checkpoint you want to evaluate. 
-- `--interpolate_model_path`: Path to the InterpolateNet model checkpoint you want to evaluate. 
-
 
