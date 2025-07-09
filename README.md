@@ -20,6 +20,7 @@ Before you begin, ensure you have the following installed:
 ```bash
 python src/train.py --dataset=YOUR_DATASET
 ```
+- The `dataset` are cut blocked point cloud folders.
 
 ## Evaluating the BaseNet
 
@@ -31,7 +32,7 @@ python src/evaluate.py \
 --origin_path=YOUR_ORIGIN_FILE_PATH \
 --compress_path=YOUR_COMPRESS_FILE_PATH
 ```
-
+- The `origin_path` and `compress_path` are not cut blocked point cloud folders.
 
 
 ## Training the Enhanced BaseNet
@@ -63,5 +64,4 @@ python src/evaluate.py \
 --origin_path=YOUR_ORIGIN_FILE_PATH \
 --compress_path=YOUR_COMPRESS_FILE_PATH
 ```
-
 
