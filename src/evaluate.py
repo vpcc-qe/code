@@ -37,7 +37,6 @@ def predict(model1_path, model2_path, compress_dir, interpolate_dir, origin_dir,
         compress_dir,
         compress_dir,
         compress_dir,
-        compress_dir,
         target_index=target_index
     )
     dataloader1 = torch.utils.data.DataLoader(test_dataset1, batch_size=1, shuffle=False)
@@ -71,7 +70,6 @@ def predict(model1_path, model2_path, compress_dir, interpolate_dir, origin_dir,
         model2.eval()
 
         test_dataset2 = PointCloudDataset(
-            interpolate_dir,
             interpolate_dir,
             interpolate_dir,
             interpolate_dir,

@@ -61,14 +61,12 @@ def train_model(model, train_dataloader, optimizer, scheduler, epochs,dynamic_en
         for batch_idx, batch_data in enumerate(train_dataloader):
             compress_tensor = batch_data['compress_tensor'].squeeze(0).to(device)#.reshape(-1, 3).float().to(DEVICE)
             origin_tensor = batch_data['origin_tensor'].squeeze(0).to(device)
-            new_origin_tensor = batch_data['new_origin_tensor'].squeeze(0).to(device)#.reshape(-1, 4).int().to(DEVICE)      
-            new_compress_tensor = batch_data['new_compress_tensor'].squeeze(0).to(device)#.reshape(-1, 4).int().to(DEVICE) 
+            new_origin_tensor = batch_data['new_origin_tensor'].squeeze(0).to(device)#.reshape(-1, 4).int().to(DEVICE)       
             current_file = batch_data['filename'][0]
        
             compress_coords = ME_utils.batched_coordinates([compress_tensor], device=device)
             origin_coords = ME_utils.batched_coordinates([origin_tensor], device=device)
             new_origin_coords = ME_utils.batched_coordinates([new_origin_tensor], device=device)
-            new_compress_coords = ME_utils.batched_coordinates([new_compress_tensor], device=device)
                    
            
             compress_sparse = ME.SparseTensor(
@@ -89,7 +87,6 @@ def train_model(model, train_dataloader, optimizer, scheduler, epochs,dynamic_en
                 compress_tensor,
                 origin_tensor,
                 new_origin_tensor,
-                new_compress_tensor,
                 use_vpcc=use_vpcc,
                 current_epoch=epoch,
                 cache_update_frequency=10
@@ -170,16 +167,22 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset',required=True)
     parser.add_argument('--dynamic', action='store_true')
+    parser.add_argument('--interpolate', action='store_true')
     args = parser.parse_args()
     epochs = 100
     base_path = "/home/jupyter-haoyu/code/dataset/r1/train_dataset"
-
-    train_dataset = PointCloudDataset(
-        f"{args.dataset}/block_interpolate",
-        f"{args.dataset}/block_predict_residual",
-        f"{args.dataset}/block_new_predict_residual",
-        f"{args.dataset}/block_new_predict_residual"
-    )
+    if args.interpolate:
+        train_dataset = PointCloudDataset(
+            f"{args.dataset}/block_interpolate",
+            f"{args.dataset}/block_predict_residual",
+            f"{args.dataset}/block_new_predict_residual",
+        )
+    else:
+        train_dataset = PointCloudDataset(
+            f"{args.dataset}/block_compress",
+            f"{args.dataset}/block_origin",
+            f"{args.dataset}/block_new_origin",
+        )
 
     # 创建数据加载器
     train_dataloader = DataLoader(

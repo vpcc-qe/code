@@ -256,7 +256,7 @@ class FileCache:
 # 初始化文件缓存
 file_cache = FileCache()
 
-def position_loss(current_file, pred, compress, origin, new_origin,new_origin_atob, use_vpcc=False, current_epoch=None, cache_update_frequency=10):
+def position_loss(current_file, pred, compress, origin, new_origin, use_vpcc=False, current_epoch=None, cache_update_frequency=10):
     
     # 声明使用全局变量
     global _last_cache_update_epoch
@@ -413,18 +413,16 @@ def save_point_cloud_as_ply(coords, filename):
 
 
 class PointCloudDataset(Dataset):
-    def __init__(self, compress_dir, origin_dir, new_origin_dir, new_compress_dir,target_index=None):
+    def __init__(self, compress_dir, origin_dir, new_origin_dir,target_index=None):
         self.compress_dir = compress_dir
         self.origin_dir = origin_dir
         self.new_origin_dir = new_origin_dir
-        self.new_compress_dir = new_compress_dir
         self.file_pairs = []
         
         # 获取所有文件
         compress_files = sorted([f for f in os.listdir(compress_dir) if f.endswith('.ply')])
         origin_files = sorted([f for f in os.listdir(origin_dir) if f.endswith('.ply')])
         new_origin_files = sorted([f for f in os.listdir(new_origin_dir) if f.endswith('.ply')])
-        new_compress_files = sorted([f for f in os.listdir(new_compress_dir) if f.endswith('.ply')])
         
         def get_file_info(filename):
             match = re.search(r'_(\d+)_block_(\d+)\.ply$', filename)
@@ -437,7 +435,6 @@ class PointCloudDataset(Dataset):
         # 创建原始文件的查找字典
         origin_dict = {}
         new_origin_dict = {}
-        new_compress_dict = {}
         for origin_file in origin_files:
             feature = get_file_info(origin_file)
             if feature:
@@ -448,10 +445,6 @@ class PointCloudDataset(Dataset):
             if feature:
                 new_origin_dict[feature] = new_origin_file
                
-        for new_compress_file in new_compress_files:
-            feature = get_file_info(new_compress_file)
-            if feature:
-                new_compress_dict[feature] = new_compress_file
                 
         # 只处理目标索引的文件
         for compress_file in compress_files:
@@ -465,7 +458,6 @@ class PointCloudDataset(Dataset):
                     compress_file,
                     origin_dict[feature],
                     new_origin_dict[feature],
-                    new_compress_dict[feature]
                 ))
                 print(f"\n成功匹配: {compress_file} <-> {origin_dict[feature]} <-> {new_origin_dict[feature]}")
             else:
@@ -477,7 +469,7 @@ class PointCloudDataset(Dataset):
         return len(self.file_pairs)
     
     def __getitem__(self, idx):
-        compress_file, origin_file, new_origin_file, new_compress_file = self.file_pairs[idx]
+        compress_file, origin_file, new_origin_file = self.file_pairs[idx]
         print(f"加载第 {idx} 个文件: {compress_file}")
         # 加载压缩点云
         compress_pcd = o3d.io.read_point_cloud(os.path.join(self.compress_dir, compress_file))
@@ -494,14 +486,9 @@ class PointCloudDataset(Dataset):
         new_origin_points = np.asarray(new_origin_pcd.points)
         new_origin_tensor = torch.from_numpy(new_origin_points).float()
         
-        # 加载新的原始点云
-        new_compress_pcd = o3d.io.read_point_cloud(os.path.join(self.new_compress_dir, new_compress_file))
-        new_compress_points = np.asarray(new_compress_pcd.points)
-        new_compress_tensor = torch.from_numpy(new_compress_points).float()
         return {
             'compress_tensor': compress_tensor,
             'origin_tensor': origin_tensor,
             'new_origin_tensor': new_origin_tensor,
-            'new_compress_tensor': new_compress_tensor,
             'filename': compress_file
         }

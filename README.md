@@ -47,7 +47,21 @@ Same as Evaluating the BaseNet.
 
 
 ## Training the InterpolateNet
+```bash
+python src/train.py --dataset=YOUR_DATASET --interpolate
+```
 
 
 ## Evaluating the InterpolateNet
+
+```bash
+python src/evaluate.py \
+--dataset=YOUR_TEST_DATASET \
+--model=YOUR_MODEL_PATH \
+--interpolate_model=YOUR_INTERPOLATE_MODEL_PATH \
+--vpcc=YOUR_VPCC_TOOL_PATH \
+--origin_path=YOUR_ORIGIN_FILE_PATH \
+--compress_path=YOUR_COMPRESS_FILE_PATH
+```
+
 
