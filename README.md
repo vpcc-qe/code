@@ -65,3 +65,8 @@ python src/evaluate.py \
 --compress_path=YOUR_COMPRESS_FILE_PATH
 ```
 
+## Visualization
+```bash
+f3d compress.ply --output=compress.png --background-color=#EAEAEA --camera-position=-294.714,886.272,564.6 --camera-focal-point=195.834,874.175,244.685 --camera-view-up=0.0172984,0.999787,-0.0112812 --camera-view-angle=33.1667
+```
+
