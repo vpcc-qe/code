@@ -20,7 +20,13 @@ Before you begin, ensure you have the following installed:
 ```bash
 python src/train.py --dataset=YOUR_DATASET
 ```
-- The `dataset` are cut blocked point cloud folders.
+- The `dataset` are cut blocked point cloud folders
+
+For example: 
+
+```bash
+python src/train.py --dataset=/home/jupyter-haoyu/code/block_dataset/r1/train_dataset
+```
 
 ## Evaluating the BaseNet
 
@@ -33,6 +39,17 @@ python src/evaluate.py \
 --compress_path=YOUR_COMPRESS_FILE_PATH
 ```
 - The `origin_path` and `compress_path` are not cut blocked point cloud folders.
+
+For example:
+
+```bash
+python src/evaluate.py \
+--dataset=/home/jupyter-haoyu/code/block_dataset/r1/test_dataset \
+--model=/home/jupyter-haoyu/code/models/epoch_1_model.pth \
+--vpcc=/home/jupyter-haoyu/code/mpeg-pcc-dmetric-0.13.05/test/pc_error_d \
+--origin_path=/home/jupyter-haoyu/Data/8i_test/orig \
+--compress_path=/home/jupyter-haoyu/Data/8i_test/8x
+```
 
 
 ## Training the Enhanced BaseNet
